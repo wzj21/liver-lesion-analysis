@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+permissions:
+  contents: read
+
+jobs:
+  lightweight-checks:
+    name: Lightweight Python checks
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Compile Python sources
+        run: python -m compileall src scripts test_software_wrapper.py
+
+      - name: Run dependency-light software tests
+        run: python test_software_wrapper.py
+
+      - name: Check clinical CLI help
+        run: python scripts/run_clinical_inference.py --help
+
+      - name: Check desktop CLI imports
+        run: python scripts/run_desktop_app.py --help
+
+  repository-hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure protected data directories are not tracked
+        run: python scripts/check_repository_hygiene.py
+
+      - name: Check required docs
+        shell: bash
+        run: |
+          test -f README.md
+          test -f LICENSE
+          test -f SECURITY.md
+          test -f docs/REAL_WORLD_SOFTWARE_GUIDE.md
+          test -f docs/WINDOWS_EXE_GUIDE.md

@@ -63,7 +63,18 @@ git push -u origin codex/software-inference
 
 如果使用 HTTPS 推送，Git for Windows 会弹出 GitHub 登录授权窗口。也可以使用 Personal Access Token。
 
-## 5. 大文件建议
+## 5. GitHub Actions
+
+仓库包含 `.github/workflows/ci.yml`，会自动运行轻量检查：
+
+- Python 源码编译检查
+- 软件封装层轻量测试
+- 临床推理 CLI help 检查
+- 仓库卫生检查，阻止数据、权重、输出文件进入 Git
+
+这些检查不安装 PyTorch，目的是让基础工程质量在没有 GPU 和模型权重的 GitHub runner 上也能快速反馈。
+
+## 6. 大文件建议
 
 若后续确实需要版本化模型权重，建议：
 
@@ -71,7 +82,7 @@ git push -u origin codex/software-inference
 - 私有仓库保存训练权重。
 - 数据集使用院内对象存储、DVC 或受控数据平台，不放入普通 Git 仓库。
 
-## 6. 临床安全
+## 7. 临床安全
 
 提交到 GitHub 前请确认：
 

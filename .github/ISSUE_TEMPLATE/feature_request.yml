@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an improvement or new workflow.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the clinical/research workflow without uploading patient-identifiable data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or workflow gap
+      description: What are you trying to accomplish?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the project do?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Data preparation
+        - Training
+        - Inference
+        - Desktop app / EXE
+        - Deployment
+        - Reporting / LLM advisor
+        - Validation
+        - Documentation
+    validations:
+      required: true

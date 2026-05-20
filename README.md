@@ -1,5 +1,9 @@
 # 肝脏病灶智能分析系统 (Liver Lesion Analysis System)
 
+[![CI](https://github.com/wzj21/liver-lesion-analysis/actions/workflows/ci.yml/badge.svg?branch=codex/software-inference)](https://github.com/wzj21/liver-lesion-analysis/actions/workflows/ci.yml)
+
+> 研究与工程开发项目：本系统输出仅用于 AI 辅助分析，不能替代医生诊断。
+
 ## 概述
 
 基于深度学习的肝脏病灶智能分析系统，支持**肝脏分割、病灶检测分类、包虫病分型与活性判定**。
@@ -40,6 +44,17 @@ Stage4: 包虫病活性判定 (活动性/非活动性, Acc>0.91)
 ```bash
 pip install -r requirements.txt
 ```
+
+## GitHub与安全
+
+- GitHub 使用说明：`docs/GITHUB_SETUP.md`
+- 真实世界软件化说明：`docs/REAL_WORLD_SOFTWARE_GUIDE.md`
+- Windows EXE 打包说明：`docs/WINDOWS_EXE_GUIDE.md`
+- 路线图：`docs/ROADMAP.md`
+- 安全策略：`SECURITY.md`
+- 贡献说明：`CONTRIBUTING.md`
+
+请勿将患者数据、DICOM/NIfTI、模型权重、报告或 API Key 提交到 GitHub。
 
 ## 快速开始
 

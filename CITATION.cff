@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: "Liver Lesion Analysis System"
+message: "If you use this software in research, please cite the repository."
+type: software
+authors:
+  - family-names: "wzj21"
+repository-code: "https://github.com/wzj21/liver-lesion-analysis"
+license: MIT
+version: "1.0.0"
+date-released: "2026-05-20"
+abstract: "AI-assisted liver lesion segmentation, classification, report generation, and desktop inference workflow for research and engineering development."
