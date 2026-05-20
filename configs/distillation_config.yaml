@@ -1,0 +1,269 @@
+# 知识蒸馏与模型轻量化配置文件
+# Knowledge Distillation and Model Compression Configuration
+
+# ==================== 全局设置 ====================
+global:
+  seed: 42
+  device: "cuda"
+  num_workers: 8
+  mixed_precision: true
+
+# ==================== Teacher模型配置 ====================
+teacher:
+  # 模型架构
+  architecture: "full"  # 完整版模型
+  checkpoint_path: "checkpoints/teacher_best.pth"
+  
+  # 模型参数
+  backbone: "convnext_small"
+  params: 62000000  # ~62M参数
+  
+  # 冻结Teacher
+  freeze: true
+
+# ==================== Student模型配置 ====================
+student:
+  # 模型架构
+  architecture: "lightweight"  # 轻量版模型
+  
+  # 架构调整
+  backbone: "convnext_femto"  # 更小的骨干
+  
+  # 各Stage配置
+  stage1:
+    encoder_channels: [48, 96, 192, 384]  # 原: [96, 192, 384, 768]
+    decoder_channels: [192, 96, 48]
+    
+  stage2:
+    encoder_channels: [48, 96, 192, 384]
+    fpn_channels: 128  # 原: 256
+    detection_heads: 3  # 原: 6
+    deformable_points: 2  # 原: 4
+    
+  stage3:
+    encoder_channels: [48, 96, 192, 384]
+    transformer_layers: 2  # 原: 4
+    transformer_heads: 4  # 原: 8
+    ffn_dim: 512  # 原: 1024
+    
+  stage4:
+    hidden_dim: 64  # 原: 128
+  
+  # 预期参数量
+  target_params: 25000000  # ~25M参数
+
+# ==================== 蒸馏策略配置 ====================
+distillation:
+  # 特征蒸馏
+  feature_distillation:
+    enabled: true
+    layers: ["stage1", "stage2", "stage3", "stage4"]  # 对齐层
+    loss_type: "mse"  # mse, cosine, attention_transfer
+    projector: true  # 是否使用投影层对齐维度
+    weight: 0.5
+    
+  # 输出蒸馏 (Logit Distillation)
+  output_distillation:
+    enabled: true
+    temperature: 4.0  # 软化温度
+    loss_type: "kl"  # kl, mse
+    weight: 0.3
+    
+    # 各任务配置
+    segmentation:
+      enabled: true
+      temperature: 4.0
+      
+    detection:
+      enabled: true
+      temperature: 2.0
+      box_weight: 1.0
+      cls_weight: 1.0
+      
+    classification:
+      enabled: true
+      temperature: 4.0
+      
+  # 不确定性蒸馏
+  uncertainty_distillation:
+    enabled: true
+    loss_type: "mse"
+    weight: 0.1
+    
+  # 关系蒸馏
+  relation_distillation:
+    enabled: true
+    loss_type: "rkd"  # rkd (Relational KD), sp (Similarity Preserving)
+    weight: 0.2
+    
+  # 注意力蒸馏
+  attention_distillation:
+    enabled: true
+    loss_type: "at"  # at (Attention Transfer)
+    weight: 0.1
+
+# ==================== 训练配置 ====================
+training:
+  # 训练阶段
+  total_epochs: 100
+  warmup_epochs: 5
+  
+  # 分阶段蒸馏
+  stage_wise_distillation:
+    enabled: true
+    # 先蒸馏骨干网络，再蒸馏任务头
+    phases:
+      - name: "backbone"
+        epochs: 30
+        freeze_heads: true
+        
+      - name: "full"
+        epochs: 70
+        freeze_heads: false
+  
+  # 优化器
+  optimizer:
+    type: "AdamW"
+    lr: 1e-4
+    weight_decay: 0.01
+    
+  # 学习率调度
+  scheduler:
+    type: "cosine"
+    min_lr: 1e-6
+    
+  # 损失权重调度
+  loss_weight_schedule:
+    # 逐渐减少蒸馏损失，增加任务损失
+    distillation_weight:
+      start: 0.8
+      end: 0.3
+      schedule: "linear"
+      
+    task_weight:
+      start: 0.2
+      end: 0.7
+      schedule: "linear"
+  
+  # 批次大小
+  batch_size: 8
+  
+  # 梯度累积
+  gradient_accumulation: 2
+  
+  # 梯度裁剪
+  gradient_clip: 1.0
+
+# ==================== 量化配置 ====================
+quantization:
+  # 量化类型
+  type: "dynamic"  # dynamic, static, qat (量化感知训练)
+  
+  # 量化精度
+  precision: "int8"  # fp16, int8
+  
+  # 量化感知训练 (QAT)
+  qat:
+    enabled: false
+    epochs: 20
+    backend: "fbgemm"  # fbgemm (x86), qnnpack (ARM)
+    
+  # 敏感层配置（不量化的层）
+  skip_layers:
+    - "evidential_head"
+    - "uncertainty_head"
+    
+  # 校准配置 (静态量化)
+  calibration:
+    num_batches: 100
+    method: "histogram"  # minmax, histogram, entropy
+
+# ==================== 推理优化配置 ====================
+inference_optimization:
+  # TensorRT优化
+  tensorrt:
+    enabled: true
+    precision: "fp16"  # fp32, fp16, int8
+    workspace_size: 1073741824  # 1GB
+    max_batch_size: 8
+    
+  # ONNX导出
+  onnx:
+    enabled: true
+    opset_version: 14
+    dynamic_axes: true
+    simplify: true
+    
+  # OpenVINO优化
+  openvino:
+    enabled: false
+    precision: "FP16"
+
+# ==================== 动态推理配置 ====================
+dynamic_inference:
+  enabled: true
+  
+  # 难度评估
+  difficulty_estimator:
+    method: "uncertainty"  # uncertainty, entropy, confidence
+    threshold: 0.3
+    
+  # 路由策略
+  routing:
+    easy_samples: "student"  # 简单样本用Student
+    hard_samples: "teacher"  # 困难样本用Teacher
+    
+  # 预期加速
+  expected_speedup: 1.5  # 相比纯Teacher
+
+# ==================== 部署配置 ====================
+deployment:
+  # 模型版本
+  versions:
+    - name: "full"
+      params: "62M"
+      inference_time_gpu: "<4s"
+      inference_time_cpu: "<10s"
+      precision: "100%"
+      
+    - name: "lightweight_fp32"
+      params: "25M"
+      inference_time_gpu: "<2s"
+      inference_time_cpu: "<5s"
+      precision: "97%"
+      
+    - name: "lightweight_fp16"
+      params: "25M"
+      inference_time_gpu: "<1.5s"
+      inference_time_cpu: "<4s"
+      precision: "97%"
+      
+    - name: "lightweight_int8"
+      params: "25M"
+      inference_time_gpu: "<1s"
+      inference_time_cpu: "<3s"
+      precision: "95%"
+  
+  # 输出目录
+  output_dir: "deployed_models/"
+  
+  # 模型元数据
+  metadata:
+    version: "1.0.0"
+    task: "liver_lesion_analysis"
+    input_format: "NCHWD"
+    
+# ==================== 评估配置 ====================
+evaluation:
+  # 评估指标
+  metrics:
+    - accuracy
+    - latency
+    - memory_usage
+    - model_size
+    
+  # 基准测试
+  benchmark:
+    num_runs: 100
+    warmup_runs: 10
+    batch_sizes: [1, 2, 4, 8]

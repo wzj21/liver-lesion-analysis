@@ -1,0 +1,29 @@
+# Software inference configuration
+# 软件化推理配置：DICOM/NIfTI输入 -> 分割/分类/报告输出
+
+device: "cuda"
+pipeline_config: "configs/global_config.yaml"
+
+# In real clinical-like inference, all trained checkpoints should exist.
+# For code smoke tests only, set this to false or pass --allow_missing_weights.
+require_checkpoints: true
+
+checkpoints:
+  stage1: "checkpoints/stage1/best_model.pth"
+  stage2: "checkpoints/stage2/best_model.pth"
+  stage3: "checkpoints/stage3/best_model.pth"
+  stage4: "checkpoints/stage4/best_model.pth"
+
+output:
+  export_masks: true
+
+# Optional large-language-model report advisor.
+# Keep disabled until a hospital-approved/private deployment is available.
+# It expects an OpenAI-compatible /chat/completions endpoint.
+llm:
+  enabled: false
+  api_base: ""
+  api_key_env: "LLM_API_KEY"
+  model: ""
+  timeout_seconds: 60
+  temperature: 0.2

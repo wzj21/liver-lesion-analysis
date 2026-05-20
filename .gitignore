@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build and packaging
+/build/
+/dist/
+*.egg-info/
+*.spec.bak
+
+# Logs and runtime outputs
+/logs/
+/outputs/
+/reports/
+*.log
+
+# Model checkpoints and exported models
+/checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.engine
+*.trt
+
+# Medical image data and derived arrays
+/data/
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+*.npy
+*.npz
+*.h5
+*.hdf5
+
+# Patient/report exports
+*.pdf
+*.html
+*.jsonl
+
+# Local secrets and machine-specific config
+.env
+.env.*
+/secrets/
+local_config.yaml
+local_config.yml
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini

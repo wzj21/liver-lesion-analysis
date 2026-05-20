@@ -1,0 +1,210 @@
+# Stage3: Temporal-Enhanced Lesion Classification
+# Multi-slice temporal aggregation for 4-class classification
+
+# Input Configuration
+input:
+  num_slices: 16  # Top-K slices from Stage2
+  image_size: 224
+  include_mask: true
+  include_boundary: true
+  
+# Mask-Guided Feature Encoder
+encoder:
+  name: "convnext_2d"
+  variant: "tiny"
+  pretrained: true
+  pretrained_path: "checkpoints/pretrained/convnext_2d_imagenet.pth"
+  
+  # Architecture
+  channels: [96, 192, 384, 768]
+  num_blocks: [3, 3, 9, 3]
+  
+  # Mask guidance
+  mask_guidance:
+    method: "channel_concat"  # channel_concat, attention, multiply
+    
+  # Output
+  feature_dim: 768
+
+# Morphology Feature Encoder
+morphology_encoder:
+  input_features:
+    - volume
+    - surface_area
+    - sphericity
+    - compactness
+    - eccentricity
+    - solidity
+    - extent
+    - aspect_ratio
+    - hu_mean
+    - hu_std
+    - hu_min
+    - hu_max
+  hidden_dims: [64, 128, 256]
+  output_dim: 256
+  dropout: 0.1
+
+# Feature Fusion
+fusion:
+  method: "concat_linear"  # concat_linear, cross_attention, gated
+  input_dim: 1024  # 768 (image) + 256 (morphology)
+  output_dim: 512
+
+# Temporal Encoder (Transformer)
+temporal_encoder:
+  num_layers: 4
+  hidden_dim: 512
+  num_heads: 8
+  dim_feedforward: 1024
+  dropout: 0.1
+  
+  # Positional encoding
+  position_encoding:
+    type: "learnable"  # learnable, sinusoidal, relative
+    max_len: 32
+    
+  # Attention
+  attention:
+    type: "self"
+    pre_norm: true
+
+# Temporal Aggregator
+aggregator:
+  type: "attention_pooling"  # attention_pooling, mean, max, cls_token
+  
+  # For attention pooling
+  num_heads: 4
+  
+  # Output slice importance weights for interpretability
+  output_weights: true
+
+# Classification Head
+classifier:
+  # Evidential classifier
+  evidential:
+    enabled: true
+    prior_scale: 1.0
+    
+  # Architecture
+  hidden_dims: [256, 128, 64]
+  num_classes: 4
+  dropout: 0.2
+  
+  # Classes
+  classes:
+    - name: "benign"
+      index: 0
+    - name: "malignant"
+      index: 1
+    - name: "cystic_echinococcosis"  # 肝囊型包虫病
+      index: 2
+    - name: "alveolar_echinococcosis"  # 肝泡型包虫病
+      index: 3
+
+# Interpretability Module
+interpretability:
+  # Grad-CAM
+  grad_cam:
+    enabled: true
+    target_layer: "encoder.stages.3"
+    
+  # Attention visualization
+  attention:
+    enabled: true
+    visualize_temporal: true
+    visualize_spatial: true
+    
+  # SHAP analysis
+  shap:
+    enabled: true
+    num_samples: 100
+    
+  # Similar case retrieval
+  similar_cases:
+    enabled: true
+    feature_layer: "aggregator"
+    top_k: 5
+    index_path: "data/feature_index/stage3_features.faiss"
+
+# Training
+training:
+  epochs: 150
+  batch_size: 8
+  gradient_accumulation: 2
+  
+  optimizer:
+    name: "adamw"
+    lr: 5e-5
+    encoder_lr_mult: 0.1  # Lower LR for pretrained encoder
+    weight_decay: 0.01
+    
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 10
+    min_lr: 1e-6
+    
+  # Loss
+  loss:
+    evidential_ce_weight: 1.0
+    slice_ce_weight: 0.3
+    consistency_weight: 0.2
+    attention_reg_weight: 0.1
+    kl_divergence_weight: 0.1
+    
+  # Class weights (for imbalanced data)
+  class_weights:
+    benign: 1.0
+    malignant: 1.5
+    cystic_echinococcosis: 2.0
+    alveolar_echinococcosis: 2.0
+    
+  # Label smoothing
+  label_smoothing: 0.1
+
+# Data Augmentation
+augmentation:
+  # Slice-level
+  slice:
+    random_rotation:
+      range: [-10, 10]
+      prob: 0.3
+    random_scale:
+      range: [0.9, 1.1]
+      prob: 0.3
+    random_flip:
+      horizontal: true
+      prob: 0.5
+    color_jitter:
+      brightness: 0.1
+      contrast: 0.1
+      prob: 0.2
+      
+  # Sequence-level
+  sequence:
+    random_drop:
+      prob: 0.1
+      max_drop_ratio: 0.2
+    random_shuffle:
+      prob: 0.05  # Slight shuffle to test temporal robustness
+
+# Evaluation
+metrics:
+  - accuracy
+  - balanced_accuracy
+  - weighted_f1
+  - macro_f1
+  - per_class_precision
+  - per_class_recall
+  - per_class_f1
+  - auc_ovr
+  - confusion_matrix
+  
+# Performance Targets
+targets:
+  accuracy: 0.93
+  malignant_recall: 0.96
+  echinococcosis_recall: 0.94
+  weighted_f1: 0.91
+  uncertainty_ece: 0.05
+  interpretability_coverage: 0.95

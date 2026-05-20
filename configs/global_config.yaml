@@ -1,0 +1,202 @@
+# Global Configuration for Liver Lesion Analysis System
+# 肝脏病灶智能分析系统全局配置
+
+# System Settings
+system:
+  seed: 42
+  device: "cuda"
+  num_workers: 8
+  pin_memory: true
+  mixed_precision: true  # AMP
+  
+# Data Settings
+data:
+  # Paths
+  data_root: "/data/liver_lesion"
+  train_dir: "${data.data_root}/train"
+  val_dir: "${data.data_root}/val"
+  test_dir: "${data.data_root}/test"
+  
+  # Preprocessing
+  preprocessing:
+    # Window settings (Liver window)
+    window_width: 160  # WW
+    window_level: 60   # WL
+    hu_min: -20        # WL - WW/2
+    hu_max: 140        # WL + WW/2
+    
+    # Resampling
+    target_spacing: [1.0, 1.0, 1.0]  # mm
+    
+  # Data splits
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+# Model Settings
+model:
+  # Backbone
+  backbone:
+    name: "convnext_3d"
+    variant: "small"  # tiny, small, base
+    pretrained: true
+    pretrained_path: "checkpoints/pretrained/convnext_3d_mae.pth"
+    
+  # Stage1: Liver Segmentation
+  stage1:
+    coarse:
+      input_size: [128, 128, 128]
+      channels: [96, 192, 384, 768]
+      num_blocks: [3, 3, 9, 3]
+    fine:
+      input_size: [256, 256, null]  # null means adaptive depth
+      use_attention_gate: true
+      deep_supervision: true
+      boundary_enhancement: true
+      
+  # Stage2: Detection + Classification + Segmentation
+  stage2:
+    detection:
+      type: "dino"
+      num_queries: 100
+      num_decoder_layers: 6
+      num_deformable_points: 4
+    segmentation:
+      type: "deformable_attention"
+      boundary_attention: true
+    classification:
+      binary: true  # Has lesion / No lesion
+      
+  # Stage3: Temporal Classification
+  stage3:
+    num_slices: 16  # Top-K slices
+    encoder:
+      name: "convnext_2d"
+      variant: "tiny"
+    temporal:
+      num_layers: 4
+      num_heads: 8
+      hidden_dim: 512
+      dropout: 0.1
+    num_classes: 4  # Benign, Malignant, CE, AE
+    
+  # Stage4: Activity Classification
+  stage4:
+    num_classes: 2  # Active, Inactive
+
+# Uncertainty Settings
+uncertainty:
+  enabled: true
+  method: "evidential"  # evidential, mc_dropout, ensemble
+  calibration:
+    method: "temperature_scaling"
+    
+# Interpretability Settings
+interpretability:
+  enabled: true
+  methods:
+    - "grad_cam"
+    - "attention_visualization"
+    - "shap"
+  similar_case_retrieval:
+    enabled: true
+    top_k: 5
+    
+# Training Settings
+training:
+  # Optimizer
+  optimizer:
+    name: "adamw"
+    lr: 1e-4
+    weight_decay: 0.05
+    betas: [0.9, 0.999]
+    
+  # Scheduler
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 10
+    min_lr: 1e-6
+    
+  # Training params
+  epochs: 100
+  batch_size: 4
+  gradient_accumulation: 4
+  gradient_clip: 1.0
+  
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 20
+    monitor: "val_loss"
+    mode: "min"
+
+# Semi-supervised Settings
+semi_supervised:
+  enabled: false
+  method: "teacher_student"  # teacher_student, fixmatch, cross_pseudo
+  labeled_ratio: 0.2
+  pseudo_label_threshold: 0.95
+  ema_decay: 0.999
+
+# Distillation Settings
+distillation:
+  enabled: false
+  teacher_path: "checkpoints/teacher/best_model.pth"
+  temperature: 4.0
+  alpha_feature: 0.5
+  alpha_output: 0.3
+  alpha_relation: 0.2
+
+# Augmentation Settings
+augmentation:
+  # Geometric
+  rotation_range: [-15, 15]
+  scale_range: [0.8, 1.2]
+  flip_prob: 0.5
+  elastic_deformation:
+    enabled: true
+    alpha: 100
+    sigma: 10
+    
+  # Intensity
+  contrast_range: [0.8, 1.2]
+  gamma_range: [0.8, 1.2]
+  noise_std: 0.01
+  
+  # Copy-Paste (Stage2)
+  copy_paste:
+    enabled: true
+    prob: 0.5
+    max_lesions: 3
+    
+  # MixUp
+  mixup:
+    enabled: true
+    alpha: 0.2
+
+# Logging
+logging:
+  log_dir: "logs"
+  tensorboard: true
+  wandb:
+    enabled: true
+    project: "liver_lesion_analysis"
+    entity: null
+  log_every_n_steps: 10
+  
+# Checkpointing
+checkpoint:
+  save_dir: "checkpoints"
+  save_top_k: 3
+  monitor: "val_dice"
+  mode: "max"
+
+# Deployment
+deployment:
+  export_format: "onnx"  # onnx, torchscript
+  quantization:
+    enabled: true
+    method: "int8"  # fp16, int8
+  tensorrt:
+    enabled: true
+    workspace_size: 4  # GB

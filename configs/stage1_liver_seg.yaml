@@ -1,0 +1,180 @@
+# Stage1: Liver Segmentation Configuration
+# 3D ConvNeXt based coarse-to-fine segmentation
+
+# Coarse Segmentation Network
+coarse_seg:
+  # Input
+  input_size: [128, 128, 128]
+  in_channels: 1
+  
+  # Backbone
+  backbone:
+    name: "convnext_3d"
+    variant: "tiny"
+    pretrained: true
+    pretrained_path: "checkpoints/pretrained/convnext_3d_mae.pth"
+    channels: [96, 192, 384, 768]
+    num_blocks: [3, 3, 9, 3]
+    stem_kernel: 4
+    stem_stride: 4
+    
+  # Decoder
+  decoder:
+    type: "unet"
+    channels: [384, 192, 96, 48]
+    skip_connections: true
+    
+  # Output
+  num_classes: 2  # Background, Liver
+  
+  # Training
+  training:
+    epochs: 100
+    batch_size: 4
+    
+    optimizer:
+      name: "adamw"
+      lr: 1e-4
+      weight_decay: 0.01
+      
+    scheduler:
+      name: "cosine"
+      warmup_epochs: 5
+      min_lr: 1e-6
+      
+    loss:
+      dice_weight: 1.0
+      ce_weight: 0.5
+
+# Fine Segmentation Network
+fine_seg:
+  # Input
+  input_size: [256, 256, null]  # Adaptive depth based on ROI
+  in_channels: 1
+  
+  # Backbone
+  backbone:
+    name: "convnext_3d"
+    variant: "small"
+    pretrained: true
+    pretrained_path: "checkpoints/pretrained/convnext_3d_mae.pth"
+    channels: [96, 192, 384, 768]
+    num_blocks: [3, 3, 27, 3]
+    
+  # Decoder
+  decoder:
+    type: "unet_enhanced"
+    channels: [384, 192, 96, 48]
+    skip_connections: true
+    attention_gate: true
+    deep_supervision: true
+    deep_supervision_levels: 3
+    
+  # Boundary Enhancement
+  boundary_enhancement:
+    enabled: true
+    sobel_3d: true
+    sdf_prediction: true
+    
+  # Evidential Segmentation Head
+  evidential:
+    enabled: true
+    prior_scale: 1.0
+    
+  # Output
+  num_classes: 2  # Background, Liver
+  
+  # Training
+  training:
+    epochs: 150
+    batch_size: 2
+    gradient_accumulation: 4
+    
+    optimizer:
+      name: "adamw"
+      lr: 5e-5
+      weight_decay: 0.01
+      
+    scheduler:
+      name: "cosine"
+      warmup_epochs: 10
+      min_lr: 1e-6
+      
+    # Loss weights
+    loss:
+      dice_weight: 0.3
+      focal_tversky_weight: 0.25
+      hd_weight: 0.2
+      cldice_weight: 0.1
+      sdf_weight: 0.1
+      evidential_weight: 0.05
+      
+    # Focal Tversky Loss params
+    focal_tversky:
+      alpha: 0.7  # FN weight
+      beta: 0.3   # FP weight
+      gamma: 0.75
+      
+    # HD Loss params
+    hd_loss:
+      alpha: 2.0
+
+# Post-processing
+postprocess:
+  # Morphological operations
+  morphology:
+    closing_kernel: 5
+    opening_kernel: 3
+    
+  # Connected component analysis
+  connected_component:
+    min_volume: 1000  # mm³
+    keep_largest: true
+    
+  # Boundary smoothing
+  smoothing:
+    enabled: true
+    sigma: 1.0
+
+# Data Augmentation
+augmentation:
+  # Geometric
+  random_rotation:
+    range: [-15, 15]
+    prob: 0.5
+  random_scale:
+    range: [0.85, 1.15]
+    prob: 0.5
+  random_flip:
+    axes: [0, 1, 2]
+    prob: 0.5
+  elastic_deformation:
+    alpha: 100
+    sigma: 10
+    prob: 0.3
+    
+  # Intensity
+  random_contrast:
+    range: [0.8, 1.2]
+    prob: 0.3
+  random_gamma:
+    range: [0.8, 1.2]
+    prob: 0.3
+  gaussian_noise:
+    std: 0.01
+    prob: 0.2
+
+# Evaluation Metrics
+metrics:
+  - dice
+  - hd95
+  - assd
+  - sensitivity
+  - specificity
+  
+# Performance Targets
+targets:
+  dice: 0.975
+  hd95: 2.5  # mm
+  assd: 0.8  # mm
+  uncertainty_ece: 0.05

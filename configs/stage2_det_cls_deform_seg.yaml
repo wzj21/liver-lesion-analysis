@@ -1,0 +1,232 @@
+# Stage2: Lesion Detection, Classification, and Deformable Segmentation
+# DINO-style detector + Deformable Attention Segmentation
+
+# Shared Backbone
+backbone:
+  name: "convnext_3d"
+  variant: "small"
+  pretrained: true
+  pretrained_path: "checkpoints/pretrained/convnext_3d_mae.pth"
+  channels: [96, 192, 384, 768]
+  num_blocks: [3, 3, 27, 3]
+  freeze_stages: 0  # Number of stages to freeze
+  
+# Feature Pyramid Network
+fpn:
+  in_channels: [96, 192, 384, 768]
+  out_channels: 256
+  num_outs: 4  # P2, P3, P4, P5
+  
+# DINO Detection Head
+detection:
+  type: "dino"
+  
+  # Queries
+  num_queries: 100
+  
+  # Transformer
+  hidden_dim: 256
+  nhead: 8
+  num_encoder_layers: 6
+  num_decoder_layers: 6
+  dim_feedforward: 1024
+  dropout: 0.1
+  
+  # Deformable Attention
+  deformable:
+    enabled: true
+    num_feature_levels: 4
+    num_points: 4
+    
+  # Contrastive Denoising
+  dn_components:
+    enabled: true
+    dn_number: 100
+    dn_box_noise_scale: 0.4
+    dn_label_noise_ratio: 0.5
+    
+  # Classification
+  num_classes: 2  # Background, Lesion
+  
+  # Box regression
+  box_head:
+    hidden_dim: 256
+    num_layers: 3
+    
+  # Loss
+  loss:
+    cls_loss_coef: 2.0
+    box_loss_coef: 5.0
+    giou_loss_coef: 2.0
+    focal_alpha: 0.25
+    focal_gamma: 2.0
+
+# Deformable Segmentation Head
+segmentation:
+  type: "deformable_attention"
+  
+  # Mask prediction
+  mask_predictor:
+    hidden_dim: 256
+    num_convs: 4
+    dynamic_conv: true  # Query-specific conv kernels
+    
+  # Deformable Cross-Attention
+  deformable_attention:
+    hidden_dim: 256
+    num_heads: 8
+    num_points: 4  # Sampling points per query
+    num_levels: 4   # Multi-scale levels
+    
+  # Boundary Attention Module
+  boundary_attention:
+    enabled: true
+    num_boundary_queries: 32
+    boundary_loss_weight: 0.2
+    
+  # Uncertainty Estimation
+  uncertainty:
+    method: "evidential"
+    prior_scale: 1.0
+    
+  # Loss
+  loss:
+    dice_weight: 0.3
+    focal_tversky_weight: 0.25
+    hd_weight: 0.2
+    boundary_weight: 0.15
+    evidential_weight: 0.1
+
+# Binary Classification (Has Lesion / No Lesion)
+classification:
+  # Logic: detection of any lesion = positive
+  confidence_threshold: 0.5
+  
+  # Evidential classification
+  evidential:
+    enabled: true
+    
+  # Calibration
+  calibration:
+    method: "temperature_scaling"
+    
+# Joint Optimization
+joint_optimization:
+  # Box-mask consistency
+  box_mask_consistency_weight: 0.2
+  
+  # Detection-segmentation uncertainty alignment
+  uncertainty_alignment_weight: 0.1
+
+# Post-processing
+postprocess:
+  # Detection
+  detection:
+    score_threshold: 0.5
+    nms_threshold: 0.3
+    max_detections: 20
+    
+  # Volume constraints
+  volume:
+    min_volume: 27  # mm³ (3×3×3)
+    max_volume_ratio: 0.5  # Max 50% of liver
+    
+  # Key slice selection
+  key_slice:
+    num_slices: 16  # Top-K slices for Stage3
+    selection_criteria: "lesion_area"
+
+# Training
+training:
+  epochs: 200
+  batch_size: 2
+  gradient_accumulation: 8
+  
+  optimizer:
+    name: "adamw"
+    lr: 1e-4
+    backbone_lr_mult: 0.1  # Lower LR for pretrained backbone
+    weight_decay: 0.05
+    
+  scheduler:
+    name: "multistep"
+    milestones: [150, 180]
+    gamma: 0.1
+    warmup_epochs: 10
+    
+  # EMA
+  ema:
+    enabled: true
+    decay: 0.9999
+
+# Data Augmentation
+augmentation:
+  # Geometric
+  random_rotation:
+    range: [-15, 15]
+    prob: 0.5
+  random_scale:
+    range: [0.8, 1.2]
+    prob: 0.5
+  random_flip:
+    axes: [0, 1, 2]
+    prob: 0.5
+  elastic_deformation:
+    alpha: 100
+    sigma: 10
+    prob: 0.3
+    
+  # Intensity
+  random_contrast:
+    range: [0.8, 1.2]
+    prob: 0.3
+  random_gamma:
+    range: [0.8, 1.2]
+    prob: 0.3
+  gaussian_noise:
+    std: 0.01
+    prob: 0.2
+    
+  # Copy-Paste
+  copy_paste:
+    enabled: true
+    prob: 0.5
+    max_lesions: 3
+    intensity_harmonization: true
+    boundary_blending:
+      enabled: true
+      blend_radius: 3
+      
+  # MixUp
+  mixup:
+    enabled: true
+    alpha: 0.2
+    prob: 0.3
+
+# Evaluation Metrics
+metrics:
+  detection:
+    - mAP_50
+    - mAP_75
+    - mAP_50_95
+    - recall
+    - precision
+  segmentation:
+    - dice
+    - hd95
+    - assd
+  classification:
+    - accuracy
+    - sensitivity
+    - specificity
+    - auc
+
+# Performance Targets
+targets:
+  classification_accuracy: 0.96
+  classification_sensitivity: 0.98
+  classification_specificity: 0.93
+  detection_mAP_50: 0.90
+  segmentation_dice: 0.88
+  segmentation_hd95: 3.5  # mm
+  uncertainty_ece: 0.05

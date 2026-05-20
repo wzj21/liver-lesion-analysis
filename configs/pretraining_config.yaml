@@ -1,0 +1,104 @@
+# Pretraining Configuration
+# Phase 0: Self-supervised Pretraining
+
+# MAE (Masked Autoencoder) Settings
+mae:
+  enabled: true
+  
+  # Architecture
+  encoder:
+    name: "convnext_3d"
+    variant: "small"
+    channels: [96, 192, 384, 768]
+    num_blocks: [3, 3, 9, 3]
+    
+  decoder:
+    type: "transformer"
+    num_layers: 4
+    hidden_dim: 512
+    num_heads: 8
+    
+  # Masking
+  mask_ratio: 0.75
+  patch_size: [16, 16, 16]
+  
+  # Training
+  training:
+    epochs: 800
+    batch_size: 32
+    optimizer:
+      name: "adamw"
+      lr: 1.5e-4
+      weight_decay: 0.05
+      betas: [0.9, 0.95]
+    scheduler:
+      name: "cosine"
+      warmup_epochs: 40
+      min_lr: 1e-6
+      
+  # Data
+  data:
+    datasets:
+      - name: "LUNA16"
+        path: "/data/pretrain/luna16"
+      - name: "DeepLesion"
+        path: "/data/pretrain/deeplesion"
+      - name: "BTCV"
+        path: "/data/pretrain/btcv"
+      - name: "AMOS"
+        path: "/data/pretrain/amos"
+      - name: "Private"
+        path: "/data/pretrain/private"
+    input_size: [96, 96, 96]
+    augmentation:
+      random_crop: true
+      random_flip: true
+      random_rotate: [-15, 15]
+
+# Contrastive Learning Settings (Optional Enhancement)
+contrastive:
+  enabled: false
+  
+  # Method
+  method: "simclr"  # simclr, moco
+  
+  # Architecture
+  projection_dim: 256
+  hidden_dim: 2048
+  
+  # Loss
+  temperature: 0.07
+  
+  # MoCo specific
+  moco:
+    queue_size: 65536
+    momentum: 0.999
+    
+  # Data augmentation for positive pairs
+  augmentation:
+    strong:
+      - random_crop
+      - random_rotate
+      - color_jitter
+      - gaussian_blur
+    weak:
+      - random_crop
+      - random_flip
+      
+  # Training
+  training:
+    epochs: 200
+    batch_size: 256
+    optimizer:
+      name: "adamw"
+      lr: 3e-4
+      weight_decay: 1e-4
+    scheduler:
+      name: "cosine"
+      warmup_epochs: 10
+
+# Output
+output:
+  save_dir: "checkpoints/pretrained"
+  save_every_n_epochs: 50
+  final_checkpoint_name: "convnext_3d_mae.pth"

@@ -1,0 +1,51 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="liver_lesion_analysis",
+    version="1.0.0",
+    description="Intelligent Liver Lesion Analysis System based on Deep Learning",
+    author="Medical AI Team",
+    author_email="contact@example.com",
+    packages=find_packages(),
+    python_requires=">=3.9",
+    install_requires=[
+        "torch>=2.0.0",
+        "torchvision>=0.15.0",
+        "pytorch-lightning>=2.0.0",
+        "nibabel>=5.0.0",
+        "SimpleITK>=2.2.0",
+        "monai>=1.2.0",
+        "numpy>=1.24.0",
+        "scipy>=1.10.0",
+        "scikit-learn>=1.2.0",
+        "pyyaml>=6.0",
+        "omegaconf>=2.3.0",
+        "einops>=0.6.0",
+        "timm>=0.9.0",
+    ],
+    extras_require={
+        "dev": [
+            "pytest>=7.3.0",
+            "pytest-cov>=4.1.0",
+            "black>=23.3.0",
+            "flake8>=6.0.0",
+            "mypy>=1.3.0",
+        ],
+        "visualization": [
+            "vtk>=9.2.0",
+            "matplotlib>=3.7.0",
+            "plotly>=5.14.0",
+        ],
+    },
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Healthcare Industry",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Scientific/Engineering :: Medical Science Apps.",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    ],
+)

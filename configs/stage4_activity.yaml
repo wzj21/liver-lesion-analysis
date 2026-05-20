@@ -1,0 +1,195 @@
+# Stage4: Echinococcosis Activity Classification
+# Activity status determination for cystic and alveolar echinococcosis
+
+# Input Configuration
+input:
+  # From Stage2 segmentation
+  lesion_mask: true
+  original_ct: true
+  
+  # ROI extraction
+  roi_margin: 10  # mm
+  
+# Boundary Feature Extractor
+boundary_extractor:
+  # Methods
+  morphological_gradient: true
+  distance_transform: true
+  
+  # Cyst wall analysis
+  wall_analysis:
+    enabled: true
+    thickness_estimation: true
+    density_profiling: true
+    continuity_analysis: true
+    
+  # Feature extraction
+  features:
+    - wall_thickness_mean
+    - wall_thickness_std
+    - wall_density_mean
+    - wall_density_std
+    - wall_continuity_score
+    - wall_irregularity_score
+    - boundary_sharpness
+    - infiltration_score
+    
+  # Network
+  encoder:
+    type: "cnn"
+    channels: [32, 64, 128]
+    kernel_size: 3
+  output_dim: 128
+
+# Internal Structure Analyzer
+internal_analyzer:
+  # Sub-cyst detection (for CE)
+  subcyst_detection:
+    enabled: true
+    method: "watershed"
+    
+  # Density distribution
+  density_analysis:
+    enabled: true
+    histogram_bins: 64
+    
+  # Calcification detection
+  calcification:
+    enabled: true
+    hu_threshold: 150
+    
+  # Necrosis detection (for AE)
+  necrosis:
+    enabled: true
+    hu_range: [-20, 20]
+    
+  # Features
+  features:
+    - num_subcysts
+    - subcyst_ratio
+    - calcification_ratio
+    - necrosis_ratio
+    - density_heterogeneity
+    - central_density
+    - peripheral_density
+    - texture_entropy
+    
+  # Network
+  encoder:
+    type: "cnn"
+    channels: [32, 64, 128]
+    kernel_size: 3
+  output_dim: 128
+
+# Classification Head
+classifier:
+  # Feature fusion
+  fusion:
+    method: "concat"
+    input_dims: [128, 128, 256]  # boundary + internal + stage3_features
+    hidden_dim: 256
+    
+  # Evidential classifier
+  evidential:
+    enabled: true
+    prior_scale: 1.0
+    
+  # Architecture
+  hidden_dims: [128, 64]
+  num_classes: 2
+  dropout: 0.2
+  
+  # Classes
+  classes:
+    - name: "active"
+      index: 0
+      description: "Active echinococcosis requiring treatment"
+    - name: "inactive"
+      index: 1
+      description: "Inactive/calcified echinococcosis"
+
+# Type-specific Processing
+type_specific:
+  # Cystic Echinococcosis (CE)
+  cystic:
+    focus:
+      - wall_integrity
+      - subcyst_morphology
+      - calcification_pattern
+    # WHO-IWGE classification correlation
+    who_stages:
+      - CE1: "active (unilocular simple cyst)"
+      - CE2: "active (multivesicular, multiseptated)"
+      - CE3a: "transitional (floating membranes)"
+      - CE3b: "transitional (thick wall)"
+      - CE4: "inactive (heterogeneous)"
+      - CE5: "inactive (calcified)"
+      
+  # Alveolar Echinococcosis (AE)
+  alveolar:
+    focus:
+      - infiltration_boundary
+      - necrosis_pattern
+      - calcification_distribution
+    # PNM classification correlation
+    pnm_stages:
+      - P: "Parasitic lesion location"
+      - N: "Involvement of neighboring organs"
+      - M: "Metastasis"
+
+# Training
+training:
+  epochs: 100
+  batch_size: 16
+  
+  optimizer:
+    name: "adamw"
+    lr: 1e-4
+    weight_decay: 0.01
+    
+  scheduler:
+    name: "cosine"
+    warmup_epochs: 5
+    min_lr: 1e-6
+    
+  # Loss
+  loss:
+    evidential_bce_weight: 1.0
+    uncertainty_reg_weight: 0.1
+    
+  # Class weights
+  class_weights:
+    active: 1.2
+    inactive: 1.0
+
+# Data Augmentation
+augmentation:
+  random_rotation:
+    range: [-10, 10]
+    prob: 0.3
+  random_scale:
+    range: [0.9, 1.1]
+    prob: 0.3
+  random_flip:
+    axes: [0, 1, 2]
+    prob: 0.5
+  intensity_shift:
+    range: [-10, 10]  # HU
+    prob: 0.2
+
+# Evaluation
+metrics:
+  - accuracy
+  - sensitivity
+  - specificity
+  - precision
+  - f1
+  - auc
+  - confusion_matrix
+  
+# Performance Targets
+targets:
+  accuracy: 0.91
+  sensitivity: 0.93
+  specificity: 0.89
+  uncertainty_ece: 0.05

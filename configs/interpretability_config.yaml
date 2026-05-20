@@ -1,0 +1,215 @@
+# 可解释性模块配置文件
+# Interpretability Module Configuration
+
+# ==================== 全局设置 ====================
+global:
+  device: "cuda"
+  output_dir: "interpretability_outputs/"
+  save_visualizations: true
+  visualization_format: "png"  # png, pdf, html
+
+# ==================== Grad-CAM配置 ====================
+grad_cam:
+  enabled: true
+  
+  # 目标层配置
+  target_layers:
+    stage1_segmentation:
+      - "backbone.stages.3"  # 最后一个stage
+      - "seg_head.decoders.0"
+    stage2_detection:
+      - "backbone.stages.3"
+      - "det_head.decoder"
+    stage3_classification:
+      - "backbone.stages.3"
+      - "cls_head.transformer"
+    stage4_activity:
+      - "activity_head.boundary_analyzer"
+  
+  # 可视化配置
+  visualization:
+    colormap: "jet"  # jet, hot, rainbow
+    alpha: 0.5  # 叠加透明度
+    threshold: 0.3  # 热图阈值
+    normalize: true
+    
+  # 变体
+  variants:
+    grad_cam_plus_plus: true
+    score_cam: false
+    eigen_cam: false
+
+# ==================== 注意力可视化配置 ====================
+attention_visualization:
+  enabled: true
+  
+  # Deformable Attention可视化
+  deformable_attention:
+    show_sampling_points: true
+    show_attention_weights: true
+    point_size: 5
+    line_width: 1
+    
+  # Transformer注意力可视化
+  transformer_attention:
+    show_self_attention: true
+    show_cross_attention: true
+    head_fusion: "mean"  # mean, max, none
+    layer_selection: "last"  # first, last, all
+    
+  # 切片注意力（Stage3）
+  slice_attention:
+    show_importance: true
+    highlight_top_k: 3
+
+# ==================== SHAP分析配置 ====================
+shap_analysis:
+  enabled: true
+  
+  # 方法
+  method: "deep"  # deep, gradient, kernel
+  
+  # 采样配置
+  num_samples: 100  # 背景样本数
+  batch_size: 10
+  
+  # 特征分组
+  feature_groups:
+    morphology: ["volume", "surface_area", "sphericity", "compactness"]
+    intensity: ["mean_hu", "std_hu", "min_hu", "max_hu"]
+    texture: ["contrast", "homogeneity", "energy", "correlation"]
+    boundary: ["boundary_sharpness", "irregularity", "roughness"]
+    
+  # 可视化
+  visualization:
+    plot_type: "bar"  # bar, beeswarm, waterfall
+    max_features: 10
+    show_interactions: true
+
+# ==================== 相似病例检索配置 ====================
+similar_case_retrieval:
+  enabled: true
+  
+  # 特征库
+  feature_database:
+    path: "data/feature_database/"
+    update_frequency: "weekly"
+    
+  # 检索配置
+  retrieval:
+    method: "faiss"  # faiss, annoy, sklearn
+    metric: "cosine"  # cosine, euclidean, manhattan
+    top_k: 5
+    
+  # 索引配置
+  index:
+    type: "IVFFlat"  # Flat, IVFFlat, IVFPQ
+    nlist: 100  # IVF聚类数
+    nprobe: 10  # 搜索时探测的聚类数
+    
+  # 展示配置
+  display:
+    show_images: true
+    show_diagnosis: true
+    show_similarity_score: true
+    show_key_features: true
+
+# ==================== 反事实解释配置 ====================
+counterfactual:
+  enabled: true
+  
+  # 方法
+  method: "contrastive"  # contrastive, growing_spheres, dice
+  
+  # 生成配置
+  generation:
+    max_iterations: 100
+    step_size: 0.01
+    sparsity_weight: 0.1  # 最小化改变的特征数
+    
+  # 可视化
+  visualization:
+    show_original: true
+    show_counterfactual: true
+    show_difference: true
+    highlight_changes: true
+
+# ==================== 决策规则提取配置 ====================
+decision_rules:
+  enabled: true
+  
+  # 方法
+  method: "anchors"  # anchors, lore, rules_extraction
+  
+  # 规则配置
+  rules:
+    max_conditions: 5
+    min_coverage: 0.1
+    min_precision: 0.9
+    
+  # 输出格式
+  output:
+    natural_language: true
+    formal_rules: true
+    decision_tree: true
+
+# ==================== 不确定性分解配置 ====================
+uncertainty_decomposition:
+  enabled: true
+  
+  # 分解类型
+  decomposition:
+    aleatoric: true  # 数据不确定性
+    epistemic: true  # 模型不确定性
+    
+  # 可视化
+  visualization:
+    show_total_uncertainty: true
+    show_components: true
+    uncertainty_threshold: 0.3  # 高不确定性阈值
+    
+  # 空间分布
+  spatial_distribution:
+    enabled: true
+    resolution: "voxel"  # voxel, region, global
+
+# ==================== 报告生成配置 ====================
+report_generation:
+  enabled: true
+  
+  # 报告内容
+  sections:
+    - diagnosis_summary
+    - attention_regions
+    - key_features
+    - uncertainty_analysis
+    - similar_cases
+    - recommendations
+    
+  # 格式配置
+  format:
+    language: "zh"  # zh, en
+    style: "clinical"  # clinical, technical, patient
+    include_images: true
+    include_charts: true
+    
+  # 模板
+  template: "templates/interpretability_report.html"
+
+# ==================== 交互式可视化配置 ====================
+interactive_visualization:
+  enabled: true
+  
+  # 3D可视化
+  volume_rendering:
+    enabled: true
+    show_liver: true
+    show_lesions: true
+    show_uncertainty_overlay: true
+    show_attention_overlay: true
+    
+  # Web界面
+  web_interface:
+    enabled: false
+    port: 8080
+    host: "localhost"
