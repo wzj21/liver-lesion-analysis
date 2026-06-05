@@ -33,6 +33,7 @@ __all__ = [
     'validation',
     'deployment',
     'software',
+    'segmentation',
 ]
 
 

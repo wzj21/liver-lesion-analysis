@@ -31,7 +31,9 @@ This roadmap turns the current research prototype into a more reliable medical i
 
 ## Phase 4: Model quality and robustness
 
-- [ ] Add nnU-Net-style baseline for liver/lesion segmentation
+- [x] Add segmentation benchmark catalog for nnU-Net, MONAI, and recent 3D candidates
+- [x] Add shared mask-level segmentation evaluator and ranking script
+- [ ] Train and compare nnU-Net-style baseline for liver/lesion segmentation
 - [ ] Add MONAI transforms and cache dataset support
 - [ ] Add test-time augmentation for uncertainty-sensitive cases
 - [ ] Add active learning queue for low-confidence or high-uncertainty cases

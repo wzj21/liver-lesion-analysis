@@ -1,0 +1,97 @@
+# Segmentation benchmark configuration.
+#
+# This file documents the intended experiment protocol. The lightweight
+# evaluator reads exported prediction masks from disk; training each candidate
+# still happens through its own training script or official external pipeline.
+
+benchmark:
+  task: "liver_or_lesion_binary_segmentation"
+  label_mode: "foreground_gt_zero"
+  target_spacing_zyx: [1.0, 1.0, 1.0]
+  patch_size_zyx: [96, 96, 96]
+  same_split_required: true
+
+selection_rule:
+  primary_metric: "mean_dice"
+  primary_direction: "max"
+  tie_breaker: "mean_hd95"
+  tie_breaker_direction: "min"
+  require_external_validation_before_release: true
+
+metrics:
+  - dice
+  - iou
+  - precision
+  - recall
+  - specificity
+  - volume_similarity
+  - hd95
+
+candidates:
+  - name: "project_cascade_liver"
+    type: "native"
+    role: "current project baseline"
+    train_command: "python scripts/train.py --stage 1 --config configs/stage1_liver_seg.yaml"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/project_cascade_liver"
+
+  - name: "monai_unet"
+    type: "monai"
+    role: "simple 3D U-Net sanity baseline"
+    train_command: "implement MONAI trainer using src.segmentation.build_segmentation_model('monai_unet')"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/monai_unet"
+
+  - name: "monai_segresnet"
+    type: "monai"
+    role: "strong residual CNN baseline"
+    train_command: "implement MONAI trainer using src.segmentation.build_segmentation_model('monai_segresnet')"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/monai_segresnet"
+
+  - name: "monai_dynunet"
+    type: "monai"
+    role: "nnU-Net-inspired configurable baseline"
+    train_command: "implement MONAI trainer using src.segmentation.build_segmentation_model('monai_dynunet')"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/monai_dynunet"
+
+  - name: "monai_unetr"
+    type: "monai"
+    role: "ViT-based 3D transformer candidate"
+    train_command: "implement MONAI trainer using src.segmentation.build_segmentation_model('monai_unetr')"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/monai_unetr"
+
+  - name: "monai_swinunetr"
+    type: "monai"
+    role: "windowed-transformer 3D candidate"
+    train_command: "implement MONAI trainer using src.segmentation.build_segmentation_model('monai_swinunetr')"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/monai_swinunetr"
+
+  - name: "external_nnunet"
+    type: "external"
+    role: "primary self-configuring benchmark"
+    train_command: "train with official nnU-Net, using the same split and labels"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/external_nnunet"
+
+  - name: "external_mednext"
+    type: "external"
+    role: "recent ConvNeXt-style medical segmentation candidate"
+    train_command: "train with official MedNeXt code, using the same split and labels"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/external_mednext"
+
+  - name: "external_nnformer"
+    type: "external"
+    role: "3D transformer research candidate"
+    train_command: "train with the research implementation, using the same split and labels"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/external_nnformer"
+
+  - name: "external_segformer3d"
+    type: "external"
+    role: "efficient 3D transformer-style research candidate"
+    train_command: "train with a reviewed implementation, using the same split and labels"
+    prediction_dir: "outputs/segmentation_benchmark/predictions/external_segformer3d"
+
+outputs:
+  prediction_root: "outputs/segmentation_benchmark/predictions"
+  ground_truth_dir: "outputs/segmentation_benchmark/ground_truth"
+  metrics_dir: "outputs/segmentation_benchmark/metrics"
+  case_metrics_csv: "case_metrics.csv"
+  summary_csv: "summary.csv"
+  summary_json: "summary.json"

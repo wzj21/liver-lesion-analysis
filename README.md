@@ -50,6 +50,7 @@ pip install -r requirements.txt
 - GitHub 使用说明：`docs/GITHUB_SETUP.md`
 - 真实世界软件化说明：`docs/REAL_WORLD_SOFTWARE_GUIDE.md`
 - Windows EXE 打包说明：`docs/WINDOWS_EXE_GUIDE.md`
+- 分割模型对比实验说明：`docs/SEGMENTATION_BENCHMARK_GUIDE.md`
 - 路线图：`docs/ROADMAP.md`
 - 安全策略：`SECURITY.md`
 - 贡献说明：`CONTRIBUTING.md`
