@@ -37,6 +37,7 @@ This roadmap turns the current research prototype into a more reliable medical i
 - [x] Add shared classification prediction evaluator and ranking script
 - [ ] Train and compare nnU-Net-style baseline for liver/lesion segmentation
 - [ ] Train and compare Stage3/Stage4 classification baselines on fixed patient-level splits
+- [ ] Train separate CE and AE echinococcosis binary classifiers on fixed patient-level splits
 - [ ] Add MONAI transforms and cache dataset support
 - [ ] Add test-time augmentation for uncertainty-sensitive cases
 - [ ] Add active learning queue for low-confidence or high-uncertainty cases

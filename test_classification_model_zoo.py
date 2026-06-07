@@ -12,6 +12,8 @@ def test_catalog_contains_required_candidates():
 
     required = {
         "project_stage3_temporal_evidential",
+        "project_ce_binary_evidential",
+        "project_ae_binary_evidential",
         "project_stage4_activity_evidential",
         "monai_densenet121_3d",
         "monai_resnet18_3d",
@@ -28,6 +30,16 @@ def test_stage3_native_spec_is_four_class():
 
     assert spec.implementation == "native"
     assert spec.config["num_classes"] == 4
+
+
+def test_echinococcosis_binary_specs_are_two_class():
+    ce_spec = get_model_spec("project-ce-binary-evidential")
+    ae_spec = get_model_spec("project_ae_binary_evidential")
+
+    assert ce_spec.config["num_classes"] == 2
+    assert ce_spec.config["positive_class"] == "cystic_echinococcosis"
+    assert ae_spec.config["num_classes"] == 2
+    assert ae_spec.config["positive_class"] == "alveolar_echinococcosis"
 
 
 def test_external_medicalnet_is_prediction_only():

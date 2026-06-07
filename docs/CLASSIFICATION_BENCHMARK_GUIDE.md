@@ -3,7 +3,10 @@
 The project already contains classification models:
 
 - Stage3: `TemporalLesionClassifier` for four-class lesion diagnosis.
-- Stage4: `EchinococcosisActivityNet` for active vs inactive echinococcosis.
+- Echinococcosis binary models:
+  - `project_ce_binary_evidential` for hepatic cystic echinococcosis (CE) vs non-CE.
+  - `project_ae_binary_evidential` for hepatic alveolar echinococcosis (AE) vs non-AE.
+- Optional Stage4: `EchinococcosisActivityNet` for active vs inactive status after CE/AE subtype classification.
 
 The missing piece was a fair comparison framework. The current classifier should
 be treated as the project baseline, then compared against 3D CNN, medical
@@ -15,7 +18,9 @@ patient-level split.
 | Candidate | Why include it | How to use it |
 | --- | --- | --- |
 | `project_stage3_temporal_evidential` | Current mask-guided temporal model with uncertainty. | Native Stage3 baseline. |
-| `project_stage4_activity_evidential` | Current activity classifier using boundary/internal features. | Native Stage4 baseline. |
+| `project_ce_binary_evidential` | Dedicated CE binary model: hepatic cystic echinococcosis vs non-CE. | Native echinococcosis binary baseline. |
+| `project_ae_binary_evidential` | Dedicated AE binary model: hepatic alveolar echinococcosis vs non-AE. | Native echinococcosis binary baseline. |
+| `project_stage4_activity_evidential` | Optional activity classifier using boundary/internal features. | Use after CE/AE subtype is known. |
 | `monai_densenet121_3d` | Stable 3D CNN volume classifier. | Build through `src.classification.build_classification_model`. |
 | `monai_resnet18_3d` | Lightweight 3D ResNet baseline. | Build through the model zoo. |
 | `monai_resnet50_3d` | Higher-capacity 3D ResNet baseline. | Build through the model zoo. |
@@ -53,7 +58,25 @@ case_001,1
 case_002,2
 ```
 
-For Stage4 activity classification, use two probability columns:
+For the CE binary model, use two probability columns:
+
+```text
+case_id,pred,prob_0,prob_1
+case_010,1,0.08,0.92
+```
+
+Here `prob_0` is non-CE and `prob_1` is hepatic cystic echinococcosis.
+
+For the AE binary model, use the same two-column pattern:
+
+```text
+case_id,pred,prob_0,prob_1
+case_020,1,0.12,0.88
+```
+
+Here `prob_0` is non-AE and `prob_1` is hepatic alveolar echinococcosis.
+
+For optional Stage4 activity classification, use two probability columns:
 
 ```text
 case_id,pred,prob_0,prob_1
@@ -70,6 +93,18 @@ outputs/classification_benchmark/
       project_stage3_temporal_evidential/
         predictions.csv
       monai_densenet121_3d/
+        predictions.csv
+    metrics/
+  echinococcosis_ce/
+    labels.csv
+    predictions/
+      project_ce_binary_evidential/
+        predictions.csv
+    metrics/
+  echinococcosis_ae/
+    labels.csv
+    predictions/
+      project_ae_binary_evidential/
         predictions.csv
     metrics/
   stage4/
@@ -99,6 +134,28 @@ python scripts\evaluate_classification_benchmark.py `
   --class-names benign,malignant,cystic_echinococcosis,alveolar_echinococcosis
 ```
 
+Evaluate hepatic cystic echinococcosis binary classification:
+
+```powershell
+python scripts\evaluate_classification_benchmark.py `
+  --labels-csv outputs\classification_benchmark\echinococcosis_ce\labels.csv `
+  --pred-root outputs\classification_benchmark\echinococcosis_ce\predictions `
+  --output-dir outputs\classification_benchmark\echinococcosis_ce\metrics `
+  --num-classes 2 `
+  --class-names non_cystic_echinococcosis,cystic_echinococcosis
+```
+
+Evaluate hepatic alveolar echinococcosis binary classification:
+
+```powershell
+python scripts\evaluate_classification_benchmark.py `
+  --labels-csv outputs\classification_benchmark\echinococcosis_ae\labels.csv `
+  --pred-root outputs\classification_benchmark\echinococcosis_ae\predictions `
+  --output-dir outputs\classification_benchmark\echinococcosis_ae\metrics `
+  --num-classes 2 `
+  --class-names non_alveolar_echinococcosis,alveolar_echinococcosis
+```
+
 Evaluate Stage4 activity:
 
 ```powershell
@@ -124,10 +181,11 @@ gate is:
 
 1. Highest macro AUC and macro F1 on the validation set.
 2. No drop in malignant recall for Stage3.
-3. No drop in active-case sensitivity for Stage4.
-4. Acceptable calibration and uncertainty behavior.
-5. Stable performance on an external test center.
-6. Runtime compatible with the desktop/EXE workflow.
+3. CE binary recall and AE binary recall must be checked independently.
+4. No drop in active-case sensitivity for optional Stage4 activity models.
+5. Acceptable calibration and uncertainty behavior.
+6. Stable performance on an external test center.
+7. Runtime compatible with the desktop/EXE workflow.
 
 After a winner is selected, wire its checkpoint into the software inference
 configuration and keep benchmark outputs as model-card evidence.

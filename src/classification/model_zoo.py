@@ -1,10 +1,13 @@
 """
 Model catalog for liver lesion classification experiments.
 
-The project has two native classifiers:
+The project has several native classification tasks:
 
 1. Stage3: four-class lesion diagnosis.
-2. Stage4: binary echinococcosis activity assessment.
+2. Echinococcosis subtype binary models:
+   - hepatic cystic echinococcosis (CE) vs non-CE
+   - hepatic alveolar echinococcosis (AE) vs non-AE
+3. Optional Stage4: active vs inactive echinococcosis assessment.
 
 This registry adds common 3D/2.5D comparison baselines while keeping imports
 lazy so CI can list candidates without torch, torchvision, or MONAI.
@@ -62,17 +65,76 @@ _MODEL_SPECS: Dict[str, ClassificationModelSpec] = {
         },
         references=("src.models.stage3_temporal_cls.TemporalLesionClassifier",),
     ),
+    "project_ce_binary_evidential": ClassificationModelSpec(
+        name="project_ce_binary_evidential",
+        family="Mask-guided temporal evidential binary classifier",
+        implementation="native",
+        status="buildable",
+        recommended_task="Hepatic cystic echinococcosis binary classification: CE vs non-CE.",
+        strengths=(
+            "Keeps the CE decision as its own calibrated binary model.",
+            "Can optimize CE sensitivity without forcing a four-class trade-off.",
+        ),
+        caveats=(
+            "Requires patient-level labels mapped to non-CE vs CE.",
+            "Should be validated separately from the AE binary model.",
+        ),
+        config={
+            "num_classes": 2,
+            "positive_class": "cystic_echinococcosis",
+            "class_names": ("non_cystic_echinococcosis", "cystic_echinococcosis"),
+            "slice_encoder_variant": "tiny",
+            "include_boundary": True,
+            "num_morphology_features": 16,
+            "morphology_output_dim": 256,
+            "temporal_hidden_dim": 512,
+            "temporal_num_layers": 4,
+            "temporal_num_heads": 8,
+            "classifier_hidden_dims": (256, 128, 64),
+        },
+        references=("src.models.stage3_temporal_cls.TemporalLesionClassifier",),
+    ),
+    "project_ae_binary_evidential": ClassificationModelSpec(
+        name="project_ae_binary_evidential",
+        family="Mask-guided temporal evidential binary classifier",
+        implementation="native",
+        status="buildable",
+        recommended_task="Hepatic alveolar echinococcosis binary classification: AE vs non-AE.",
+        strengths=(
+            "Keeps the AE decision as its own calibrated binary model.",
+            "Can optimize AE sensitivity for infiltrative lesions independently.",
+        ),
+        caveats=(
+            "Requires patient-level labels mapped to non-AE vs AE.",
+            "Should be validated separately from the CE binary model.",
+        ),
+        config={
+            "num_classes": 2,
+            "positive_class": "alveolar_echinococcosis",
+            "class_names": ("non_alveolar_echinococcosis", "alveolar_echinococcosis"),
+            "slice_encoder_variant": "tiny",
+            "include_boundary": True,
+            "num_morphology_features": 16,
+            "morphology_output_dim": 256,
+            "temporal_hidden_dim": 512,
+            "temporal_num_layers": 4,
+            "temporal_num_heads": 8,
+            "classifier_hidden_dims": (256, 128, 64),
+        },
+        references=("src.models.stage3_temporal_cls.TemporalLesionClassifier",),
+    ),
     "project_stage4_activity_evidential": ClassificationModelSpec(
         name="project_stage4_activity_evidential",
         family="Boundary/internal activity classifier",
         implementation="native",
         status="buildable",
-        recommended_task="Stage4 binary echinococcosis activity classification.",
+        recommended_task="Optional active vs inactive echinococcosis assessment after CE/AE subtype classification.",
         strengths=(
             "Combines boundary, internal structure, lesion type, and Stage3 features.",
             "Clinically aligned with active vs inactive follow-up decisions.",
         ),
         caveats=(
+            "This is an activity classifier, not the CE-vs-AE subtype classifier.",
             "Only applies after an echinococcosis class is suspected or confirmed.",
             "Needs WHO-IWGE/PNM-aligned labels for trustworthy training.",
         ),
@@ -292,26 +354,12 @@ def build_classification_model(
 
 
 def _build_native_model(name: str, num_classes: int, config: Mapping[str, Any]) -> Any:
-    if name == "project_stage3_temporal_evidential":
-        from src.models.stage3_temporal_cls import TemporalLesionClassifier
-
-        return TemporalLesionClassifier(
-            slice_encoder_variant=config.get("slice_encoder_variant", "tiny"),
-            slice_encoder_pretrained=config.get("slice_encoder_pretrained"),
-            include_boundary=bool(config.get("include_boundary", True)),
-            num_morphology_features=int(config.get("num_morphology_features", 16)),
-            morphology_hidden_dims=list(config.get("morphology_hidden_dims", [64, 128, 256])),
-            morphology_output_dim=int(config.get("morphology_output_dim", 256)),
-            temporal_hidden_dim=int(config.get("temporal_hidden_dim", 512)),
-            temporal_num_layers=int(config.get("temporal_num_layers", 4)),
-            temporal_num_heads=int(config.get("temporal_num_heads", 8)),
-            temporal_dropout=float(config.get("temporal_dropout", 0.1)),
-            num_classes=int(config.get("num_classes", num_classes)),
-            classifier_hidden_dims=list(config.get("classifier_hidden_dims", [256, 128, 64])),
-            classifier_dropout=float(config.get("classifier_dropout", 0.2)),
-            fusion_method=config.get("fusion_method", "concat_linear"),
-            aggregation_type=config.get("aggregation_type", "attention_pooling"),
-        )
+    if name in {
+        "project_stage3_temporal_evidential",
+        "project_ce_binary_evidential",
+        "project_ae_binary_evidential",
+    }:
+        return _build_temporal_classifier(config=config, default_num_classes=num_classes)
 
     if name == "project_stage4_activity_evidential":
         from src.models.stage4_activity import EchinococcosisActivityNet
@@ -326,6 +374,28 @@ def _build_native_model(name: str, num_classes: int, config: Mapping[str, Any]) 
         )
 
     raise KeyError(f"No native builder is registered for {name!r}")
+
+
+def _build_temporal_classifier(config: Mapping[str, Any], default_num_classes: int) -> Any:
+    from src.models.stage3_temporal_cls import TemporalLesionClassifier
+
+    return TemporalLesionClassifier(
+        slice_encoder_variant=config.get("slice_encoder_variant", "tiny"),
+        slice_encoder_pretrained=config.get("slice_encoder_pretrained"),
+        include_boundary=bool(config.get("include_boundary", True)),
+        num_morphology_features=int(config.get("num_morphology_features", 16)),
+        morphology_hidden_dims=list(config.get("morphology_hidden_dims", [64, 128, 256])),
+        morphology_output_dim=int(config.get("morphology_output_dim", 256)),
+        temporal_hidden_dim=int(config.get("temporal_hidden_dim", 512)),
+        temporal_num_layers=int(config.get("temporal_num_layers", 4)),
+        temporal_num_heads=int(config.get("temporal_num_heads", 8)),
+        temporal_dropout=float(config.get("temporal_dropout", 0.1)),
+        num_classes=int(config.get("num_classes", default_num_classes)),
+        classifier_hidden_dims=list(config.get("classifier_hidden_dims", [256, 128, 64])),
+        classifier_dropout=float(config.get("classifier_dropout", 0.2)),
+        fusion_method=config.get("fusion_method", "concat_linear"),
+        aggregation_type=config.get("aggregation_type", "attention_pooling"),
+    )
 
 
 def _require_monai_nets():

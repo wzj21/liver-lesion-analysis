@@ -17,6 +17,24 @@ benchmark:
       prediction_root: "outputs/classification_benchmark/stage3/predictions"
       metrics_dir: "outputs/classification_benchmark/stage3/metrics"
 
+    echinococcosis_ce_binary:
+      num_classes: 2
+      class_names:
+        - non_cystic_echinococcosis
+        - cystic_echinococcosis
+      labels_csv: "outputs/classification_benchmark/echinococcosis_ce/labels.csv"
+      prediction_root: "outputs/classification_benchmark/echinococcosis_ce/predictions"
+      metrics_dir: "outputs/classification_benchmark/echinococcosis_ce/metrics"
+
+    echinococcosis_ae_binary:
+      num_classes: 2
+      class_names:
+        - non_alveolar_echinococcosis
+        - alveolar_echinococcosis
+      labels_csv: "outputs/classification_benchmark/echinococcosis_ae/labels.csv"
+      prediction_root: "outputs/classification_benchmark/echinococcosis_ae/predictions"
+      metrics_dir: "outputs/classification_benchmark/echinococcosis_ae/metrics"
+
     stage4_activity:
       num_classes: 2
       class_names:
@@ -33,7 +51,8 @@ selection_rule:
   tie_breaker_direction: "max"
   safety_checks:
     - "malignant_recall_must_not_drop"
-    - "echinococcosis_recall_must_not_drop"
+    - "ce_binary_recall_must_not_drop"
+    - "ae_binary_recall_must_not_drop"
     - "calibration_and_uncertainty_review"
     - "external_validation_before_release"
 
@@ -59,46 +78,58 @@ candidates:
     task: "stage3_diagnosis"
     prediction_dir: "outputs/classification_benchmark/stage3/predictions/project_stage3_temporal_evidential"
 
+  - name: "project_ce_binary_evidential"
+    type: "native"
+    role: "hepatic cystic echinococcosis binary model"
+    task: "echinococcosis_ce_binary"
+    prediction_dir: "outputs/classification_benchmark/echinococcosis_ce/predictions/project_ce_binary_evidential"
+
+  - name: "project_ae_binary_evidential"
+    type: "native"
+    role: "hepatic alveolar echinococcosis binary model"
+    task: "echinococcosis_ae_binary"
+    prediction_dir: "outputs/classification_benchmark/echinococcosis_ae/predictions/project_ae_binary_evidential"
+
   - name: "project_stage4_activity_evidential"
     type: "native"
-    role: "current Stage4 activity model"
+    role: "optional active/inactive model after CE/AE subtype classification"
     task: "stage4_activity"
     prediction_dir: "outputs/classification_benchmark/stage4/predictions/project_stage4_activity_evidential"
 
   - name: "monai_densenet121_3d"
     type: "monai"
     role: "3D DenseNet volume baseline"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/monai_densenet121_3d"
 
   - name: "monai_resnet18_3d"
     type: "monai"
     role: "lightweight 3D ResNet baseline"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/monai_resnet18_3d"
 
   - name: "monai_resnet50_3d"
     type: "monai"
     role: "higher-capacity 3D ResNet baseline"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/monai_resnet50_3d"
 
   - name: "torchvision_r3d18"
     type: "torchvision"
     role: "generic 3D video ResNet baseline"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/torchvision_r3d18"
 
   - name: "torchvision_r2plus1d18"
     type: "torchvision"
     role: "2+1D convolution baseline"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/torchvision_r2plus1d18"
 
   - name: "external_medicalnet_resnet"
     type: "external"
     role: "medical-pretrained 3D ResNet transfer learning"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/external_medicalnet_resnet"
 
   - name: "external_radimagenet_25d"
@@ -116,7 +147,7 @@ candidates:
   - name: "external_radiomics_ml"
     type: "external"
     role: "radiomics and tabular machine-learning baseline"
-    task: "stage3_diagnosis_or_stage4_activity"
+    task: "stage3_diagnosis_or_echinococcosis_binary_or_stage4_activity"
     prediction_dir: "outputs/classification_benchmark/predictions/external_radiomics_ml"
 
 outputs:
