@@ -34,6 +34,7 @@ __all__ = [
     'deployment',
     'software',
     'segmentation',
+    'classification',
 ]
 
 

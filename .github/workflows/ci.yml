@@ -25,7 +25,7 @@ jobs:
           python-version: "3.10"
 
       - name: Compile Python sources
-        run: python -m compileall src scripts test_software_wrapper.py test_segmentation_model_zoo.py
+        run: python -m compileall src scripts test_software_wrapper.py test_segmentation_model_zoo.py test_classification_model_zoo.py
 
       - name: Run dependency-light software tests
         run: python test_software_wrapper.py
@@ -35,6 +35,12 @@ jobs:
 
       - name: List segmentation benchmark models
         run: python scripts/evaluate_segmentation_benchmark.py --list-models
+
+      - name: Run dependency-light classification catalog tests
+        run: python test_classification_model_zoo.py
+
+      - name: List classification benchmark models
+        run: python scripts/evaluate_classification_benchmark.py --list-models
 
       - name: Check clinical CLI help
         run: python scripts/run_clinical_inference.py --help
@@ -61,3 +67,4 @@ jobs:
           test -f docs/REAL_WORLD_SOFTWARE_GUIDE.md
           test -f docs/WINDOWS_EXE_GUIDE.md
           test -f docs/SEGMENTATION_BENCHMARK_GUIDE.md
+          test -f docs/CLASSIFICATION_BENCHMARK_GUIDE.md

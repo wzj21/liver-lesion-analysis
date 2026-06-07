@@ -33,7 +33,10 @@ This roadmap turns the current research prototype into a more reliable medical i
 
 - [x] Add segmentation benchmark catalog for nnU-Net, MONAI, and recent 3D candidates
 - [x] Add shared mask-level segmentation evaluator and ranking script
+- [x] Add classification benchmark catalog for native, MONAI, 3D CNN, transfer, and radiomics candidates
+- [x] Add shared classification prediction evaluator and ranking script
 - [ ] Train and compare nnU-Net-style baseline for liver/lesion segmentation
+- [ ] Train and compare Stage3/Stage4 classification baselines on fixed patient-level splits
 - [ ] Add MONAI transforms and cache dataset support
 - [ ] Add test-time augmentation for uncertainty-sensitive cases
 - [ ] Add active learning queue for low-confidence or high-uncertainty cases
