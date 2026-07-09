@@ -52,6 +52,9 @@ pip install -r requirements.txt
 - Windows EXE 打包说明：`docs/WINDOWS_EXE_GUIDE.md`
 - 分割模型对比实验说明：`docs/SEGMENTATION_BENCHMARK_GUIDE.md`
 - 分类模型对比实验说明：`docs/CLASSIFICATION_BENCHMARK_GUIDE.md`
+- 真实世界多病灶数据结构：`docs/DATA_SCHEMA.md`
+- 真实世界多病灶工作流：`docs/REAL_WORLD_MULTI_LESION_GUIDE.md`
+- 生成式增强说明：`docs/GENERATION_AUGMENTATION_GUIDE.md`
 - 路线图：`docs/ROADMAP.md`
 - 安全策略：`SECURITY.md`
 - 贡献说明：`CONTRIBUTING.md`

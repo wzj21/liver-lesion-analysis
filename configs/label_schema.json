@@ -1,0 +1,109 @@
+{
+  "schema_version": "2026-07-realworld-v1",
+  "description": "Real-world lesion-level and patient-level label schema for hepatic echinococcosis and complex liver lesions.",
+  "main_classes": {
+    "CE": {
+      "label": 0,
+      "name": "hepatic_cystic_echinococcosis",
+      "patient_flag": "has_ce"
+    },
+    "AE": {
+      "label": 1,
+      "name": "hepatic_alveolar_echinococcosis",
+      "patient_flag": "has_ae"
+    },
+    "BENIGN": {
+      "label": 2,
+      "name": "non_echinococcal_benign_liver_lesion",
+      "patient_flag": "has_benign"
+    },
+    "MALIGNANT": {
+      "label": 3,
+      "name": "non_echinococcal_malignant_liver_lesion",
+      "patient_flag": "has_malignant"
+    },
+    "UNCERTAIN": {
+      "label": 4,
+      "name": "uncertain_or_review_required",
+      "patient_flag": "has_uncertain"
+    }
+  },
+  "benign_subtypes": [
+    "simple_cyst",
+    "hemangioma",
+    "focal_nodular_hyperplasia",
+    "adenoma",
+    "abscess",
+    "other_benign"
+  ],
+  "malignant_subtypes": [
+    "hepatocellular_carcinoma",
+    "intrahepatic_cholangiocarcinoma",
+    "metastasis",
+    "combined_hcc_cca",
+    "other_malignant"
+  ],
+  "ce_stages": [
+    "CE1",
+    "CE2",
+    "CE3a",
+    "CE3b",
+    "CE4",
+    "CE5",
+    "not_applicable",
+    "unknown"
+  ],
+  "ce_activity": [
+    "active",
+    "transitional",
+    "inactive",
+    "unknown",
+    "not_applicable"
+  ],
+  "ae_activity": [
+    "active",
+    "inactive",
+    "high_risk",
+    "low_risk",
+    "unknown",
+    "not_applicable"
+  ],
+  "ae_p_stages": [
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "unknown",
+    "not_applicable"
+  ],
+  "kodama_types": [
+    "type_1",
+    "type_2",
+    "type_3",
+    "type_4",
+    "type_5",
+    "unknown",
+    "not_applicable"
+  ],
+  "evidence_levels": {
+    "pathology": "Pathology or surgical specimen confirmed.",
+    "surgery": "Surgical record and multidisciplinary consensus.",
+    "petct": "PET/CT strong label for AE metabolic activity.",
+    "serology_followup": "Serology and longitudinal imaging follow-up.",
+    "expert_consensus": "Multidisciplinary expert consensus.",
+    "imaging_only": "Imaging diagnosis without pathology or long follow-up.",
+    "unknown": "Evidence source is not yet curated."
+  },
+  "safety_review_triggers": [
+    "low_confidence",
+    "high_uncertainty",
+    "uncertain_main_class",
+    "ce_and_ae_coexist",
+    "echinococcosis_and_malignancy_coexist",
+    "malignant_lesion_detected",
+    "complex_multilesion_case",
+    "model_disagreement",
+    "segmentation_failure",
+    "synthetic_source_anomaly"
+  ]
+}

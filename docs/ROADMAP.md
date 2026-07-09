@@ -31,6 +31,8 @@ This roadmap turns the current research prototype into a more reliable medical i
 
 ## Phase 4: Model quality and robustness
 
+- [x] Add real-world lesion-level schema and patient-level multi-label data templates
+- [x] Add dependency-light aggregation, safety-gate, and structured-report foundation
 - [x] Add segmentation benchmark catalog for nnU-Net, MONAI, and recent 3D candidates
 - [x] Add shared mask-level segmentation evaluator and ranking script
 - [x] Add classification benchmark catalog for native, MONAI, 3D CNN, transfer, and radiomics candidates

@@ -1,0 +1,2 @@
+synthetic_id,source_patient_id,source_study_id,source_lesion_id,generator_name,generator_version,condition_summary,image_path,mask_path,split,passed_auto_qc,passed_expert_qc,nearest_neighbor_distance,notes
+SYN001,P001,S001,L001,Echi-MambaDiff,v0,CE2_mask_conditioned,D:/example/synthetic_image.nii.gz,D:/example/synthetic_mask.nii.gz,train,true,false,,template_example

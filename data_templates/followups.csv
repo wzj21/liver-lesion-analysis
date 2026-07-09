@@ -1,0 +1,2 @@
+patient_id,study_id,followup_date,months_from_baseline,treatment_status,recurrence,progression,death,notes
+P001,S001,2024-07-01,6,follow_up,false,false,false,template_example

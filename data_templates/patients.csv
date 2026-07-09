@@ -1,0 +1,2 @@
+patient_id,sex,birth_year,region,center_id,endemic_exposure,occupation,notes
+P001,F,1978,Qinghai,CENTER_A,yes,herder,template_example

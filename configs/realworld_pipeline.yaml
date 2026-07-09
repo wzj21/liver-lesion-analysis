@@ -1,0 +1,38 @@
+# Real-world multi-lesion pipeline configuration.
+
+schema:
+  label_schema: "configs/label_schema.json"
+
+data:
+  templates_dir: "data_templates"
+  split_manifest_dir: "outputs/realworld_splits"
+  synthetic_data_allowed_splits:
+    - train
+  protected_splits:
+    - val
+    - internal_test
+    - external_test
+    - prospective_test
+
+aggregation:
+  malignant_priority: 100
+  ae_priority: 80
+  ce_priority: 70
+  uncertain_priority: 60
+  benign_priority: 20
+
+safety_gate:
+  confidence_review_threshold: 0.65
+  uncertainty_review_threshold: 0.35
+  always_review_malignancy: true
+  always_review_ce_ae_coexistence: true
+  always_review_echinococcosis_malignancy_coexistence: true
+  always_review_uncertain_class: true
+
+reporting:
+  include_lesion_table: true
+  include_review_reasons: true
+  include_disclaimer: true
+  output_formats:
+    - json
+    - markdown

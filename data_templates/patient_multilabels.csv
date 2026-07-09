@@ -1,0 +1,2 @@
+patient_id,study_id,has_ce,has_ae,has_benign,has_malignant,has_uncertain,has_complex_coexistence,highest_risk_lesion_id,requires_review,review_reasons
+P001,S001,true,false,false,false,false,false,L001,false,

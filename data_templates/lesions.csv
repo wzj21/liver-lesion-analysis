@@ -1,0 +1,2 @@
+lesion_id,study_id,patient_id,lesion_index,main_class,subtype,ce_stage,ce_activity,ae_activity,ae_p_stage,kodama_type,bbox_path,mask_path,location_segment,max_diameter_mm,volume_ml,confidence,uncertainty,evidence_level,label_source,requires_review,review_notes
+L001,S001,P001,1,CE,cystic_echinococcosis,CE2,active,not_applicable,not_applicable,not_applicable,D:/example/bbox.json,D:/example/lesion_mask.nii.gz,S6,52.4,43.2,0.91,0.08,expert_consensus,radiologist,false,template_example

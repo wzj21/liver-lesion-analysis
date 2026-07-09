@@ -35,6 +35,7 @@ __all__ = [
     'software',
     'segmentation',
     'classification',
+    'realworld',
 ]
 
 

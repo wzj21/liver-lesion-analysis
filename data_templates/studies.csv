@@ -1,0 +1,2 @@
+study_id,patient_id,study_date,center_id,modality,phase_or_sequence,dicom_dir,nifti_path,quality_score,split
+S001,P001,2024-01-01,CENTER_A,CT,portal_venous,D:/example/dicom,D:/example/image.nii.gz,good,train

@@ -1,0 +1,2 @@
+patient_id,study_id,surgery_date,surgery_type,resection_extent,operation_time_min,blood_loss_ml,transfusion,vascular_reconstruction,biliary_reconstruction,clavien_dindo_grade,severe_complication_30d,notes
+P001,S001,2024-02-01,hepatectomy,S6_segmentectomy,120,300,false,false,false,0,false,template_example

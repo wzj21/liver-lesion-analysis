@@ -1,0 +1,2 @@
+patient_id,study_id,lesion_id,petct_date,fdg_uptake,activity_label,suvmax,suvratio,label_strength,notes
+P001,S001,L001,2024-01-15,unknown,unknown,,,not_applicable,template_example

@@ -25,7 +25,7 @@ jobs:
           python-version: "3.10"
 
       - name: Compile Python sources
-        run: python -m compileall src scripts test_software_wrapper.py test_segmentation_model_zoo.py test_classification_model_zoo.py
+        run: python -m compileall src scripts test_software_wrapper.py test_segmentation_model_zoo.py test_classification_model_zoo.py test_realworld_schema.py
 
       - name: Run dependency-light software tests
         run: python test_software_wrapper.py
@@ -41,6 +41,12 @@ jobs:
 
       - name: List classification benchmark models
         run: python scripts/evaluate_classification_benchmark.py --list-models
+
+      - name: Run dependency-light real-world schema tests
+        run: python test_realworld_schema.py
+
+      - name: Check real-world data templates
+        run: python scripts/check_realworld_dataset.py
 
       - name: Check clinical CLI help
         run: python scripts/run_clinical_inference.py --help
@@ -68,3 +74,6 @@ jobs:
           test -f docs/WINDOWS_EXE_GUIDE.md
           test -f docs/SEGMENTATION_BENCHMARK_GUIDE.md
           test -f docs/CLASSIFICATION_BENCHMARK_GUIDE.md
+          test -f docs/DATA_SCHEMA.md
+          test -f docs/REAL_WORLD_MULTI_LESION_GUIDE.md
+          test -f docs/GENERATION_AUGMENTATION_GUIDE.md
